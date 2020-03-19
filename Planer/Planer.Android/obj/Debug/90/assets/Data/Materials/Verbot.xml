@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<material>
+	<technique name="Techniques/Diff.xml" />
+	<texture name="Textures/Verbot.png" unit="diffuse" />
+	<parameter name="MatDiffColor" value="0.64 0.64 0.64 1" />
+	<parameter name="MatSpecColor" value="0.4 0.4 0.4 128" />
+</material>
