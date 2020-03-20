@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\GitRepos\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj": {}
+    "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj": {}
   },
   "projects": {
-    "D:\\GitRepos\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj": {
+    "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\GitRepos\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj",
+        "projectUniqueName": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj",
         "projectName": "Planer.iOS",
-        "projectPath": "D:\\GitRepos\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj",
+        "projectPath": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer.iOS\\Planer.iOS.csproj",
         "packagesPath": "C:\\Users\\BloodyReaper\\.nuget\\packages\\",
-        "outputPath": "D:\\GitRepos\\PlaneVS\\Planer\\Planer.iOS\\obj\\",
+        "outputPath": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer.iOS\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "fallbackFolders": [
@@ -32,8 +32,8 @@
         "frameworks": {
           "xamarinios10": {
             "projectReferences": {
-              "D:\\GitRepos\\PlaneVS\\Planer\\Planer\\Planer.csproj": {
-                "projectPath": "D:\\GitRepos\\PlaneVS\\Planer\\Planer\\Planer.csproj"
+              "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer\\Planer.csproj": {
+                "projectPath": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer\\Planer.csproj"
               }
             }
           }
@@ -52,7 +52,7 @@
             },
             "Xamarin.Forms": {
               "target": "Package",
-              "version": "[4.3.0.908675, )"
+              "version": "[4.5.0.396, )"
             }
           }
         }
@@ -69,14 +69,14 @@
         }
       }
     },
-    "D:\\GitRepos\\PlaneVS\\Planer\\Planer\\Planer.csproj": {
+    "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer\\Planer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\GitRepos\\PlaneVS\\Planer\\Planer\\Planer.csproj",
+        "projectUniqueName": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer\\Planer.csproj",
         "projectName": "Planer",
-        "projectPath": "D:\\GitRepos\\PlaneVS\\Planer\\Planer\\Planer.csproj",
+        "projectPath": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer\\Planer.csproj",
         "packagesPath": "C:\\Users\\BloodyReaper\\.nuget\\packages\\",
-        "outputPath": "D:\\GitRepos\\PlaneVS\\Planer\\Planer\\obj\\",
+        "outputPath": "D:\\GitRepos\\TestPlanner\\PlaneVS\\Planer\\Planer\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Microsoft\\Xamarin\\NuGet\\",
@@ -124,7 +124,7 @@
             },
             "Xamarin.Forms": {
               "target": "Package",
-              "version": "[4.3.0.908675, )"
+              "version": "[4.5.0.396, )"
             }
           },
           "imports": [

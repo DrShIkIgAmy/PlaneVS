@@ -20,7 +20,7 @@ namespace Planer.Droid
             var surface = UrhoSurface.CreateSurface(this);// (this, , true);
             mLayout.AddView(surface);
             SetContentView(mLayout);
-            var app = await surface.Show<GameSession>(new Urho.ApplicationOptions("Data"));
+            var app = await surface.Show<Game>(new Urho.ApplicationOptions("Data"));
         }
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {

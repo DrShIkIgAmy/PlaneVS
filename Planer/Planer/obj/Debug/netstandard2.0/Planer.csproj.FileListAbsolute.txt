@@ -11,3 +11,16 @@ D:\GitRepos\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.dll
 D:\GitRepos\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\ref\Planer.dll
 D:\GitRepos\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.pdb
 D:\GitRepos\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.csprojAssemblyReference.cache
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\bin\Debug\netstandard2.0\Planer.deps.json
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\bin\Debug\netstandard2.0\Planer.dll
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\bin\Debug\netstandard2.0\ref\Planer.dll
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\bin\Debug\netstandard2.0\Planer.pdb
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\App.xaml.g.cs
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\MainPage.xaml.g.cs
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.AssemblyInfoInputs.cache
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.AssemblyInfo.cs
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\XamlC.stamp
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.dll
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\ref\Planer.dll
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.pdb
+D:\GitRepos\TestPlanner\PlaneVS\Planer\Planer\obj\Debug\netstandard2.0\Planer.csprojAssemblyReference.cache

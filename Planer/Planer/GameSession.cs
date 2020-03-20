@@ -11,255 +11,240 @@ using Xamarin.Essentials;
 
 namespace Planer
 {
-    public class GameSession:Application
-    {
-        public GameSession(ApplicationOptions opts) : base(opts) { }
+	public class GameSession : Component
+	{
+		public delegate void GameOver();
+		public event GameOver GameOvered;
 
-		Planer plane;
-		Text score;
-		Obstecles obstecles;
-		Scene scene;
-		ControllDataHendler filter;
-		Vector3 trackSize = new Vector3(200, 1, 1000);
-		int Score = 0;
-		bool gameOver = false;
-		bool finished = false;
+		private Scene _scene = null;
+		private Ship _ship = null;
+		private Obstecles _obstecles = null;
+		private Node _lightNode = null;
+		private Node _trackNode = null;
 
+		private ControllDataHendler _filter = null;
+		private Text _scoreLabel = null;
+		private bool _gameOver = false;
+		private bool _finished = false;
 
-		protected override void Start()
-        {
-            base.Start();
-			CreateMenu();
-        }
-		async Task StopGame()
+		public int Scores { get; set; } = 0;
+
+		public Vector3 WorldGravity { get; set; } = new Vector3(0, 0, 0);
+
+		public Vector3 CameraPosition { get; set; } = new Vector3(0.0f, 400f, -300.0f);
+		public Quaternion CameraRotation { get; set; } = new Quaternion(45, 0, 0);
+
+		public Vector3 LightPosition { get; set; } = new Vector3(0.0f, 200f, 50);
+		public Quaternion LightRotation { get; set; } = new Quaternion(0, 0, 0);
+
+		public Vector3 TrackSize { get; set; } = new Vector3(200, 1, 1000);
+		public Vector3 TrackPosition { get; set; } = new Vector3(0, 0, 200);
+
+		public Vector3 ShipSize { get; set; } = new Vector3(10, 10, 10);
+		public Vector3 ShipPosition { get; set; } = new Vector3(0, 300, -50);
+		public Quaternion ShipRotation { get; set; } = new Quaternion(0, 0, 0);
+
+		public Vector3 ObsteclesSize { get; set; } = new Vector3(0.3f, 0.3f, 0.3f);
+		public float ObsteclesInterval { get; set; } = 400;
+		public float ObsteclesSpeed { get; set; } = 200;
+
+		public void AddScene(ref Scene scene)
 		{
-			Accelerometer.ReadingChanged -= controll;
-			Accelerometer.Stop();
-			if (scene!=null)
-			{
-				obstecles.stop();
-				await plane.Crash();
-				scene.Clear();
-				UI.Root.RemoveAllChildren();
-				gameOver = true;
-			}
-			CreateMenu();
+			_scene = scene;
 		}
 
-		void StartGame()
+		public async Task StopGame()
 		{
-			gameOver = false;
-			Score = 0;
+			DetachAcc();
+			_gameOver = true;
+			await _ship.BlowUp();
+			_obstecles.stop();
+			_scene?.RemoveAllComponents();
+			_scene?.RemoveAllChildren();
+			Application.UI.Root.RemoveAllChildren();
+			GameOvered?.Invoke();
+		}
+
+		public void StartGame()
+		{
+			_gameOver = false;
+			Scores = 0;
+			_filter?.reset();
 			CreateScene();
-			Accelerometer.ReadingChanged += controll;
-			Accelerometer.Start(SensorSpeed.Game);
+			RunShip();
+			RunObstecles();
+			AttachAcc();
 		}
 
 		void CreateScene()
 		{
-			if (scene == null) 
-				scene = new Scene();
+			if (_scene == null) 
+				_scene = new Scene();
 
-			scene.CreateComponent<Octree>();
+			_scene.CreateComponent<Octree>();
 
-			var physics = scene.CreateComponent<PhysicsWorld>();
-			physics.SetGravity(new Vector3(0, 0, 0));
+			var physics = _scene.CreateComponent<PhysicsWorld>();
+			physics.SetGravity(WorldGravity);
 
-			var cameraNode = scene.CreateChild();
-			cameraNode.Position = (new Vector3(0.0f, 400f, -300.0f));
-			cameraNode.Rotate(new Quaternion(45, 0, 0));
+			var cameraNode = _scene.CreateChild();
+			cameraNode.Position = CameraPosition;
+			cameraNode.Rotate(CameraRotation);
 			cameraNode.CreateComponent<Camera>();
-			var Viewport = new Viewport(Context, scene, cameraNode.GetComponent<Camera>(), null);
+			var Viewport = new Viewport(Context, _scene, cameraNode.GetComponent<Camera>(), null);
 
-			if (Platform != Platforms.Android && Platform != Platforms.iOS)
+			if (Application.Platform != Platforms.Android && Application.Platform != Platforms.iOS)
 			{
 				RenderPath effectRenderPath = Viewport.RenderPath.Clone();
-				var fxaaRp = ResourceCache.GetXmlFile(Assets.PostProcess.FXAA3);
+				var fxaaRp = Application.ResourceCache.GetXmlFile(Assets.PostProcess.FXAA3);
 				effectRenderPath.Append(fxaaRp);
 				Viewport.RenderPath = effectRenderPath;
 			}
 
-			Renderer.SetViewport(0, Viewport);
+			Application.Renderer.SetViewport(0, Viewport);
 
-			var zoneNode = scene.CreateChild();
+			var zoneNode = _scene.CreateChild();
 			var zone = zoneNode.CreateComponent<Zone>();
 			zone.SetBoundingBox(new BoundingBox(-1000.0f, 1000.0f));
 			zone.AmbientColor = new Color(1f, 1f, 1f);
 
 
-			var landNode = scene.CreateChild();
-			landNode.Scale = trackSize;
-			landNode.Position = new Vector3(0, 0, 200);
-			var land = landNode.CreateComponent<AnimatedModel>();
-			land.Model = ResourceCache.GetModel(Assets.Models.Plane);
-			land.Material = ResourceCache.GetMaterial(Assets.Materials.Grass);
+			_trackNode = _scene.CreateChild();
+			_trackNode.Scale = TrackSize;
+			_trackNode.Position = TrackPosition;
+			var track = _trackNode.CreateComponent<AnimatedModel>();
+			track.Model = Application.ResourceCache.GetModel(Assets.Models.Plane);
+			track.Material = Application.ResourceCache.GetMaterial(Assets.Materials.Grass);
 
-			var lightNode = scene.CreateChild();
-			lightNode.Position = new Vector3(0.0f, 200f, 50);
-			lightNode.AddComponent(new Light { Range = 1200, Brightness = 0.8f });
+			_lightNode = _scene.CreateChild();
+			_lightNode.Position = LightPosition;
+			_lightNode.Rotation = LightRotation;
+			_lightNode.AddComponent(new Light { Range = 1200, Brightness = 0.8f });
 
-			plane = new Planer();
-			plane.planePosition = new Vector3(0, 300, -50);
-			plane.planeScale = new Vector3(10f,10f,10f);
-			scene.AddComponent(plane);
-			plane.Init();
-			plane.GameOver += onCrash;
-
-			score = new Text();
-			score.HorizontalAlignment = HorizontalAlignment.Right;
-			score.VerticalAlignment = VerticalAlignment.Top;
-			score.SetFont(ResourceCache.GetFont(Assets.Fonts.Font), Graphics.Width / 20);
-			score.Value = 0.ToString();
-			UI.Root.AddChild(score);
-
-			obstecles = new Obstecles();
-			obstecles.scoreAchieved += incrementScore;
-			obstecles.trackSize = trackSize;
-			obstecles.Size = new Vector3(0.3f, 0.3f, 0.3f);
-			obstecles.Interval = 400;
-			obstecles.Speed = 200;
-			scene.AddComponent(obstecles);
-			obstecles.start();
+			_scoreLabel = new Text();
+			_scoreLabel.HorizontalAlignment = HorizontalAlignment.Right;
+			_scoreLabel.VerticalAlignment = VerticalAlignment.Top;
+			_scoreLabel.SetFont(Application.ResourceCache.GetFont(Assets.Fonts.Font), Application.Graphics.Width / 20);
+			_scoreLabel.Value = 0.ToString();
+			Application.UI.Root.AddChild(_scoreLabel);
 		}
 
-		void CreateMenu()
+		void RunShip()
 		{
-			if (scene == null)
-				scene = new Scene();
-			scene.CreateComponent<Octree>();
+			_ship = new Ship();
+			_ship.Position = ShipPosition;
+			_ship.Scale = ShipSize;
+			_ship.Rotation = ShipRotation;
+			_scene.AddComponent(_ship);
+			_ship.Init();
+			_ship.Crashed += onCrash;
+		}
 
-			var physics = scene.CreateComponent<PhysicsWorld>();
-			physics.SetGravity(new Vector3(0, 0, 0));
-			var cameraNode = scene.CreateChild();
-			cameraNode.Position = (new Vector3(0.0f, 0f, -500.0f));
-			cameraNode.Rotate(new Quaternion(10, 0, 0));
-			cameraNode.CreateComponent<Camera>();
-			var Viewport = new Viewport(Context, scene, cameraNode.GetComponent<Camera>(), null);
+		void RunObstecles()
+		{
+			_obstecles = new Obstecles();
+			_obstecles.scoreAchieved += incrementScore;
+			_obstecles.TrackSize = TrackSize;
+			_obstecles.Size = ObsteclesSize;
+			_obstecles.Interval = ObsteclesInterval;
+			_obstecles.Speed = ObsteclesSpeed;
+			_scene.AddComponent(_obstecles);
+			_obstecles.Init();
+			_obstecles.start();
 
-			if (Platform != Platforms.Android && Platform != Platforms.iOS)
-			{
-				RenderPath effectRenderPath = Viewport.RenderPath.Clone();
-				var fxaaRp = ResourceCache.GetXmlFile(Assets.PostProcess.FXAA3);
-				effectRenderPath.Append(fxaaRp);
-				Viewport.RenderPath = effectRenderPath;
-			}
-			Renderer.SetViewport(0, Viewport);
+		}
 
-			var zoneNode = scene.CreateChild();
-			var zone = zoneNode.CreateComponent<Zone>();
-			zone.SetBoundingBox(new BoundingBox(-300.0f, 300.0f));
-			zone.AmbientColor = new Color(1f, 1f, 1f);
+		void AttachAcc()
+		{
+			if (Accelerometer.IsMonitoring)
+				return;
+			Accelerometer.ReadingChanged += controll;
+			Accelerometer.Start(SensorSpeed.Game);
+		}
 
-			var plannerNode = scene.CreateChild();
-			plannerNode.Position = new Vector3(0, -50, 0);
-			plannerNode.Scale = new Vector3(10, 10, 10);
-			var planner = plannerNode.CreateComponent<StaticModel>();
-			planner.Model = ResourceCache.GetModel(Assets.Models.VerBot);
-			planner.Material = ResourceCache.GetMaterial(Assets.Materials.VerBot);
-			planner.SetMaterial(ResourceCache.GetMaterial(Assets.Materials.VerBot));
-			var movement = new RepeatForever(new RotateBy(1, 0, 5, 0));
-			plannerNode.RunActionsAsync(movement);
-			// Lights:
-			var lightNode = scene.CreateChild();
-			lightNode.Position = new Vector3(0.0f, 0f, -5.0f);
-			var light = lightNode.CreateComponent<Light>();
-			light.Range = 1200;
-			light.Brightness = 2;
-			//lightNode.AddComponent(new Light { Range = 1200, Brightness = 0.8f });
+		void DetachAcc()
+		{
+			if (!Accelerometer.IsMonitoring)
+				return;
+			Accelerometer.ReadingChanged -= controll;
+			Accelerometer.Stop();
+		}
+		
+		void incrementScore()
+		{
+			++Scores;
+			_scoreLabel.Value = Scores.ToString();
+		}
 
-			if(gameOver)
-			{
-				Text ResultText = new Text();
-				ResultText.HorizontalAlignment = HorizontalAlignment.Center;
-				ResultText.VerticalAlignment = VerticalAlignment.Center;
-				ResultText.Value = "Game over with " + Score.ToString() + " score";
-				ResultText.SetFont(ResourceCache.GetFont(Assets.Fonts.Font), Graphics.Width / 20);
-				UI.Root.AddChild(ResultText);
-			}
-
-			Text WelcomeText = new Text();
-			WelcomeText.HorizontalAlignment = HorizontalAlignment.Center;
-			WelcomeText.VerticalAlignment = VerticalAlignment.Center;
-			WelcomeText.Position = new IntVector2(WelcomeText.Position.X, 150);
-			WelcomeText.Value = "Tap to play";
-			WelcomeText.SetFont(ResourceCache.GetFont(Assets.Fonts.Font), Graphics.Width / 20);
-			UI.Root.AddChild(WelcomeText);
-			finished = false;
-
+		public void controll(object sender, AccelerometerChangedEventArgs e)
+		{
+			if (_ship == null)
+				return;
+			if (_filter == null)
+				_filter = new ControllDataHendler();
+			_filter.procceseInpAcc(e.Reading.Acceleration.X);
+			_ship.changePosition(new Vector3(-_filter.Velocity, 50, -50), _filter.AngleDelta);
 		}
 
 		async void onCrash()
 		{
 			await StopGame();
 		}
-		
-		void incrementScore()
-		{
-			++Score;
-			score.Value = Score.ToString();
-		}
-
-		protected override async void OnUpdate(float timeStep)
-		{
-			if (finished)
-				return;
-			var input = Input;
-			if (input.GetMouseButtonDown(MouseButton.Left) || input.NumTouches > 0)
-			{
-				finished = true;
-				scene?.Clear();
-				UI.Root.RemoveAllChildren();
-				StartGame();
-			}
-		}
-
-		public void controll(object sender, AccelerometerChangedEventArgs e)
-		{
-			if (plane == null)
-				return;
-			if (filter == null)
-				filter = new ControllDataHendler();
-			filter.procceseInpAcc(e.Reading.Acceleration.X);
-			plane.changePosition(new Vector3(-filter.Velocity, 50, -50), filter.delta);
-		}
 
 	}
 
 	public class ControllDataHendler
 	{
-		public float Velocity { get; set; }
-		public float delta { get; set; }
+		public float Velocity { get; private set; } = 0;
+        public float AngleDelta { get; private set; }
+		public int XLimit { get; set; } = 120;
 
-		float VelocityPrev = 0;
-		float pppAngle;
-		float ppAnle;
-		float pAngle;
-		float alpha = 0.4f, betta = 0.3f, gamma = 0.2f, tetta = 0.1f;
-		int xLimit = 100;
-		float angle = 0;
+		private float _velocityPrev;
+		private float _pppAngle;
+		private float _ppAnle;
+		private float _pAngle;
+		private float _alpha = 0.4f, _betta = 0.3f, _gamma = 0.2f, _tetta = 0.1f;
+		private float _angle = 0;
+
+		public void SetExpFilter(float Alpha,float Betta,float Gamma,float Tetta)
+		{
+			_alpha = Alpha;
+			_betta = Betta;
+			_gamma = Gamma;
+			_tetta = Tetta;
+		}
+
+		public ControllDataHendler()
+		{
+			_velocityPrev = 0;
+			_pppAngle = 0;
+			_ppAnle = 0;
+			_pAngle = 0;
+		}
+
 		public void procceseInpAcc(float inp)
 		{
-			var Angle = inp * alpha + pAngle * betta + ppAnle * gamma + pppAngle * tetta;
-			pppAngle = ppAnle;
-			ppAnle = pAngle;
-			pAngle = Angle;
+			var Angle = inp * _alpha + _pAngle * _betta + _ppAnle * _gamma + _pppAngle * _tetta;
+			_pppAngle = _ppAnle;
+			_ppAnle = _pAngle;
+			_pAngle = Angle;
 			Velocity += (Angle * 20);
-			Velocity = Math.Abs(Velocity) > xLimit ? Math.Sign(Velocity) * xLimit : Velocity;
-			angle += Math.Abs(angle) > 90 ? Math.Sign(angle) * 90 - angle : (Velocity - VelocityPrev) / 3f;
-			delta = Math.Abs(angle) >= 90 ? 0 : (Velocity - VelocityPrev) / 0.3f;
-			VelocityPrev = Velocity;
+			Velocity = Math.Abs(Velocity) > XLimit ? Math.Sign(Velocity) * XLimit : Velocity;
+			_angle += Math.Abs(_angle) > 90 ? Math.Sign(_angle) * 90 - _angle : (Velocity - _velocityPrev) / 3f;
+			AngleDelta = Math.Abs(_angle) >= 90 ? 0 : (Velocity - _velocityPrev) / 0.3f;
+			_velocityPrev = Velocity;
 		}
+
 		public void reset()
 		{
 			Velocity = 0;
-			delta = 0;
+			AngleDelta = 0;
 
-			VelocityPrev = 0;
-			pppAngle=0;
-			ppAnle=0;
-			pAngle=0;
-			angle = 0;
-	}
+			_velocityPrev = 0;
+			_pppAngle=0;
+			_ppAnle=0;
+			_pAngle=0;
+			_angle = 0;
+		}	
 	}
 
 

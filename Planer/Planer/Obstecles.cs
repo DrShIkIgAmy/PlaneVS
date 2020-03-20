@@ -9,34 +9,52 @@ namespace Planer
 {
     public class Obstecles:Component
     {
-        public Vector3 trackSize { get; set; }
+        public Vector3 TrackSize { get; set; }
+
+
         public Vector3 Size { get; set; }
         public float Interval { get; set; }
-        public float StartInterval { get; set; }
+        public float Offset { get; set; }
 		public float Speed { get; set; }
-		List<Obstecle> obstecles = new List<Obstecle>();
+		public float Distance { get; set; }
+		public float Yposition { get; set; } = 50;
+		public float OverZdistance { get; set; } = -300;
+		public int ObstecleCount { get; private set; }
+		public float StartZ { get; private set; }
+
+		List<Obstecle> _obsteclesList = new List<Obstecle>();
+
 		public delegate void scoreReceived();
 		public event scoreReceived scoreAchieved;
-        public void start()
-        {
-			int obstCount = (int)Math.Floor(trackSize.Z / Interval);
-			float curZ = StartInterval;
-			for(int i = 0;i<obstCount;i++)
+
+		public void Init()
+		{
+			ObstecleCount = (int)Math.Floor(TrackSize.Z / Interval);
+			StartZ = Offset;
+			for(int i=0;i<ObstecleCount;i++)
 			{
+				float curX = RandomHelper.NextRandom(-TrackSize.X / 2, TrackSize.X / 2);
+
 				var obst = new Obstecle();
 				Node.AddComponent(obst);
+
 				obst.Speed = Speed;
-				obst.trackSize = trackSize;
+				obst.Spread = new Vector2(-TrackSize.X / 2, TrackSize.X / 2);
 				obst.Size = Size;
-				float curX = RandomHelper.NextRandom(-trackSize.X/2, trackSize.X/2);
-				obst.LastPosition = new Vector3(curX, 50, -300);
-				obst.Position = new Vector3(curX, 50, curZ += Interval);
-				obstecles.Add(obst);
-				obstecles.FindLast(x => true).scoreAchieved+=throwEvent;
+				obst.FrontTrackPosition = new Vector2(curX, OverZdistance);
+				obst.InitPosition = new Vector3(curX, Yposition, StartZ += Interval);
+				_obsteclesList.Add(obst);
+				_obsteclesList.FindLast(x => true).scoreAchieved += throwEvent;
 			}
-			foreach (var i in obstecles)
+			foreach (var i in _obsteclesList)
 			{
-				i.FirstPosition = new Vector3(trackSize.X, 50, curZ);
+				i.TailTrackPosition = new Vector2(TrackSize.X, StartZ);
+			}
+		}
+        public void start()
+        {
+			foreach (var i in _obsteclesList)
+			{
 				i.Start();
 			}
 		}
@@ -46,7 +64,7 @@ namespace Planer
 		}
 		public void stop()
 		{
-			foreach(var i in obstecles)
+			foreach(var i in _obsteclesList)
 			{
 				i.Destroy();
 			}
@@ -55,76 +73,79 @@ namespace Planer
 
 	public class Obstecle:Component
 	{
-		Node parentNode = null;
-		Node obstNode = null;
+		Node _parentNode = null;
+		Node _obstNode = null;
 		public Vector3 Size { get; set; }
-
+		public Vector3 InitPosition { get; set; }
+		public Vector2 Spread { get; set; }
+		public float Speed { get; set; }
+		public Vector2 FrontTrackPosition { get; set; }
+		public Vector2 TailTrackPosition { get; set; }
+		public bool IsOnTrack { get; } = true;
 		public delegate void Passed();
+
 		public event Passed scoreAchieved;
 
-		public Vector3 Position { get; set; }
-		public Vector3 trackSize { get; set; }
-		public float Speed { get; set; }
-		public Vector3 LastPosition { get; set; }
-		public Vector3 FirstPosition { get; set; }
 		public void Create()
 		{
-			if(parentNode==null)
-				parentNode = Node.CreateChild();
-			obstNode = parentNode.CreateChild();
+			if(_parentNode==null)
+				_parentNode = Node.CreateChild();
+			_obstNode = _parentNode.CreateChild();
 			var cach = Application.ResourceCache;
-			obstNode = Node.CreateChild();
-			obstNode.Scale = Size;
-			obstNode.Position = Position;
-			obstNode.Rotation = new Quaternion(0, 90, 0);
-			var obstecle = obstNode.CreateComponent<StaticModel>();
+			_obstNode = Node.CreateChild();
+			_obstNode.Scale = Size;
+			_obstNode.Position = InitPosition;
+			_obstNode.Rotation = new Quaternion(0, 90, 0);
+			var obstecle = _obstNode.CreateComponent<StaticModel>();
 			obstecle.Model = cach.GetModel(Assets.Models.WaterTower);
 			obstecle.Material = cach.GetMaterial(Assets.Materials.WaterTower);
 
-			var TailNode = obstNode.CreateChild();
-			//TailNode.Translate(new Vector3(0, 0, Size.Z / 2));
+			var TailNode = _obstNode.CreateChild();
 			TailNode.Scale = new Vector3(100, 100, 100);
 			var Tail = TailNode.CreateComponent<ParticleEmitter2D>();
 			Tail.Effect = cach.GetParticleEffect2D(Assets.Particles.ObstTail);
 
-			var body = obstNode.CreateComponent<RigidBody>();
+			var body = _obstNode.CreateComponent<RigidBody>();
 			body.Mass = 1;
 			body.Kinematic = true;
 			body.CollisionLayer = (uint)4;
-			var collision = obstNode.CreateComponent<CollisionShape>();
+			var collision = _obstNode.CreateComponent<CollisionShape>();
 			var hitBoxSize = obstecle.BoundingBox.Size;
-			hitBoxSize.Scale(0.5f, 0.5f, 0.5f);
+			hitBoxSize.Scale(0.9f, 0.9f, 0.9f);
 			collision.SetBox(hitBoxSize, new Vector3(0, 0, 0), new Quaternion(0, 0, 0));
 		}
+
 		public void Start()
 		{
 			_startAsync();
 		}
 		private async void _startAsync()
 		{
-			while (true)
+			while (IsOnTrack)
 			{
 				Create();
-				float time = -(LastPosition.Z - Position.Z) / Speed;
+				float time = -(FrontTrackPosition.Y - InitPosition.Z) / Speed;
 				
-				await obstNode.RunActionsAsync(new MoveTo(time, LastPosition));
-				obstNode.SetWorldPosition(FirstPosition);
+				await _obstNode.RunActionsAsync(new MoveTo(time, new Vector3(FrontTrackPosition.X,InitPosition.Y,FrontTrackPosition.Y)));
+				_obstNode.SetWorldPosition(new Vector3(TailTrackPosition.X,InitPosition.Y,TailTrackPosition.Y));
 				
-				var curX = RandomHelper.NextRandom(-trackSize.X/2, trackSize.X / 2);
-				FirstPosition = new Vector3(curX, FirstPosition.Y, FirstPosition.Z);
-				LastPosition = new Vector3(curX, LastPosition.Y, LastPosition.Z);
-				Position = FirstPosition;
-				obstNode.Remove();
+				var curX = RandomHelper.NextRandom(-Spread.X/2, Spread.X / 2);
+
+				TailTrackPosition = new Vector2(curX, TailTrackPosition.Y);
+				FrontTrackPosition = new Vector2(curX, FrontTrackPosition.Y);
+				InitPosition = new Vector3(TailTrackPosition.X, InitPosition.Y, TailTrackPosition.Y);
+				_obstNode.Remove();
 				scoreAchieved?.Invoke();
 			}
 		}
+
 		public void Destroy()
 		{
-			obstNode.RemoveAllActions();
-			obstNode.RemoveAllComponents();
-			obstNode.RemoveAllChildren();
-			parentNode.RemoveAllChildren();
-			parentNode.Remove();
+			_obstNode.RemoveAllActions();
+			_obstNode.RemoveAllComponents();
+			_obstNode.RemoveAllChildren();
+			_parentNode.RemoveAllChildren();
+			_parentNode.Remove();
 		}
 	}
 
